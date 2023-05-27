@@ -1,63 +1,104 @@
 <?php
 
+
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request; //Handling http request from lumen
-use App\Models\User; //My Model
-use App\Traits\ApiResponser; //Standard API response
-use DB; // can be use if not using eloquent, you can use DB component in lumen
-
+use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use App\Traits\ApiResponser;
 
-Class UserController extends Controller {
+class userController extends Controller
+{
     use ApiResponser;
 
     private $request;
 
+    public $timestamps = false;
+    /**
+     * Create a new controller instance.
+     *
+     * @return void
+     */
     public function __construct(Request $request)
     {
         $this->request = $request;
     }
-    public function getUsers()
-    {
-        // Eloquent Style
-        // $users = User::all();
-
-        // sql string as parameter
-        $users = DB::connection('mysql')
-        ->select("Select * from tbluser");
-
-        return $this -> successReponse($users);
-    }
-
-    public function index(){
-        $users = User::all();
-        return $this -> successReponse($users);
-    }
     
-    public function add(Request $request){
-        
+
+    public function showUsers() {
+        return $this -> successResponse(User::all());
+    }
+
+
+    public function showUser($id) {
+
+        try{
+        $user = User::findOrFail($id);
+        return $this->successResponse($user);
+    } catch (\Exception $exception ) {
+        return $this->errorNotFound($id, 'Not Found', 404);
+    }
+
+    }
+
+    public function addUser(Request $request){
         $rules = [
-            'username' => 'required|max:50',
-            'password' => 'required|max:50',
-            'gender' => 'required|in:Male,Female',
+            'username' => 'required | max:20 | alpha_num',
+            'password' => 'required | max:20 | alpha_num',
+            'gender' => 'required|in:Male,Female'
         ];
 
-        $this->validate($request,$rules);
+        $validate = $this->validate($request, $rules);
+        
 
-        $users = User::create($request->all());
-        return $this -> successReponse($users, Response::HTTP_CREATED);
+        if ($validate) {
+            $user = User::create($request->all());
+
+            return $this->successResponse($user, 201);
+        }
+        else {
+            return $this->ErrorResponse("Operation Cannot be done", 
+            Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
     }
 
-    public function show($id){
-        $users = User::where('userId', $id)->first();
-        if ($users){
-            return $this -> successReponse($users);
+    public function deleteUser($id) {
+        $user = User::findOrFail($id);
+
+        if ($user) {
+            $user->delete();
+ 
+            return $this->successResponse("User has been deleted");
         }
-        {
-            return $this-> errorResponse('User Does Not Exist', Response::HTTP_NOT_FOUND);
+
+    }
+
+    public function updateUser(Request $request, $id) {
+        $rules = [
+            'username' => 'required | max:20 | alpha_num',
+            'password' => 'required | max:20 | alpha_num',
+        ];
+
+        $validate = $this->validate($request, $rules);
+
+        if ($validate) {
+            $user = User::findOrFail($id);
+
+            $user->fill($request->all());
+
+
+            if ($user->isClean()) {
+                return $this-> ErrorResponse("At least one value must
+                change", Response::HTTP_UNPROCESSABLE_ENTITY);
+            } else {
+                $user->save();
+                return $this->successResponse($user);
+            }
+        } else {
+            return $this->serverError("Operation Cannot be done.", Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-        
+
     }
     
 }

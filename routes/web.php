@@ -17,10 +17,14 @@ $router->get('/', function () use ($router) {
     return $router->app->version();
 });
 
+$router->group(['prefix' => 'api'], function($router) {
+    $router->get('users', 'userController@showUsers');
 
-$router->get('/users',['uses' => 'UserController@index']);              //get all users
-$router->post('/users',['uses' => 'UserController@add']);               //add  users
-$router->get('/users/{id}',['uses' => 'UserController@show']);          //get users by id
-$router->put('/users/{id}',['uses' => 'UserController@update']);        //update user records
-$router->patch('/users/{id}',['uses' => 'UserController@update']);      //get all users
-$router->delete('/users/{id}',['uses' => 'UserController@delete']);     //delete user record
+    $router->get('users/{id}', 'userController@showUser');
+
+    $router->post('users', 'userController@addUser');
+
+    $router->delete('users/{id}', 'userController@deleteUser');
+
+    $router->patch('/users/{id}', 'userController@updateUser');
+});
