@@ -78,17 +78,17 @@ Class UserController1 extends Controller {
         ];
 
          $this->validate($request,$rules);
-         $userjob = UserJob::findOrFail($request->jobid);
+         //$userjob = UserJob::findOrFail($request->jobid);
          $users = User::where('userId', $id)->firstOrFail();
          $users->fill($request->all());
-         
+
         //  IF NO CHANGE HAPPENED
          if ($users->isClean()){
             return $this->errorResponse('At least one value must change', Response::HTTP_UNPROCESSABLE_ENTITY);
          }
          $users->save();
          return $this -> successResponse($users);
-     } 
+     }
     //  DELETE FUNCTION
      public function deleteUser($id) {
         $users = User::findOrFail($id);
